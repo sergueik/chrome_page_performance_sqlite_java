@@ -117,6 +117,9 @@ https://github.com/addyosmani/timing.js/blob/master/timing.js
 
 The project was earlier develped inside a repository [sergueik/selenium_java](https://github.com/sergueik/selenium_java.git) - check the old past histories there.
 
+### License
+This project is licensed under the terms of the MIT license.
+
 ### Author
 
 [Serguei Kouzmine](kouzmine_serguei@yahoo.com)
