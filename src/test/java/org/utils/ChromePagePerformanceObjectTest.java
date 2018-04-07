@@ -1,75 +1,46 @@
 package org.utils;
 
-import org.utils.ChromePagePerformanceObject;
-import org.utils.ChromePagePerformanceUtil;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.apache.commons.io.FileUtils;
+import java.io.File;
+import java.io.IOException;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
-import org.openqa.selenium.By.ById;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.NoAlertPresentException;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.interactions.Actions;
+
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
+
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.awt.image.BufferedImage;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
-
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.imageio.ImageIO;
-
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-import org.sqlite.Function;
-import org.sqlite.SQLiteConnection;
-
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-public class ChromePagePerformanceTest {
+public class ChromePagePerformanceObjectTest {
 
 	private static WebDriver driver;
 	private static Connection conn;
@@ -137,7 +108,7 @@ public class ChromePagePerformanceTest {
 			// https://developers.google.com/web/updates/2017/04/headless-chrome
 			// https://stackoverflow.com/questions/43880619/headless-chrome-and-selenium-on-windows
 		}
-
+		//
 		capabilities.setBrowserName(DesiredCapabilities.chrome().getBrowserName());
 		capabilities.setCapability(ChromeOptions.CAPABILITY, options);
 		capabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
@@ -152,14 +123,13 @@ public class ChromePagePerformanceTest {
 			if (conn != null) {
 				// System.out.println("Connected to the database");
 				DatabaseMetaData databaseMetadata = conn.getMetaData();
-				// System.out.println("Driver name: " +
-				// databaseMetadata.getDriverName());
-				// System.out.println("Driver version: " +
-				// databaseMetadata.getDriverVersion());
-				// System.out.println("Product name: " +
-				// databaseMetadata.getDatabaseProductName());
-				// System.out.println("Product version: " +
-				// databaseMetadata.getDatabaseProductVersion());
+				System.out.println("Driver name: " + databaseMetadata.getDriverName());
+				System.out
+						.println("Driver version: " + databaseMetadata.getDriverVersion());
+				System.out.println(
+						"Product name: " + databaseMetadata.getDatabaseProductName());
+				System.out.println(
+						"Product version: " + databaseMetadata.getDatabaseProductVersion());
 				createNewTable();
 				// insertData("name", 1.0);
 				// conn.close();
@@ -198,6 +168,10 @@ public class ChromePagePerformanceTest {
 		 */
 	}
 
+	@After
+	public void afterMethod() {
+	}
+
 	@AfterClass
 	public static void teardown() {
 		driver.close();
@@ -207,8 +181,8 @@ public class ChromePagePerformanceTest {
 				conn.close();
 				conn = null;
 			}
-		} catch (SQLException ex) {
-			System.out.println(ex.getMessage());
+		} catch (SQLException e) {
+			System.err.println("SQL exception (ignored): " + e.getMessage());
 		}
 	}
 
@@ -217,7 +191,7 @@ public class ChromePagePerformanceTest {
 	public void testSetTimer() {
 		double test = new ChromePagePerformanceObject(driver, baseURL,
 				elementSelector).getLoadTime();
-		System.out.println(test);
+		System.err.println(test);
 	}
 
 	// @Ignore
@@ -230,12 +204,11 @@ public class ChromePagePerformanceTest {
 		if (matcher.find()) {
 			new ArrayList<String>(Arrays.asList(payload.split(splitter))).stream()
 					.forEach(System.err::println);
-
 		}
-
 	}
 
 	// NOTE: this test is failing
+	@SuppressWarnings("unchecked")
 	@Ignore
 	@Test
 	public void testRecordNativeSplitter() {
@@ -264,30 +237,31 @@ public class ChromePagePerformanceTest {
 						.forEach(System.err::println);
 
 			}
-		}	
+		}
 	}
 
 	// @Ignore
 	@Test
-	public void testParse() {
-		ChromePagePerformanceObject o = new ChromePagePerformanceObject(driver,
-				null);
+	public void testChromePagePerformanceObjectParse() {
+		ChromePagePerformanceObject chromePagePerformanceObject = new ChromePagePerformanceObject(
+				driver, null);
 		String payload = "[{redirectCount=0, encodedBodySize=64518, unloadEventEnd=0, responseEnd=4247.699999992619, domainLookupEnd=2852.7999999932945, unloadEventStart=0, domContentLoadedEventStart=4630.699999994249, type=navigate, decodedBodySize=215670, duration=5709.000000002561, redirectStart=0, connectEnd=3203.5000000032596, toJSON={}, requestStart=3205.499999996391, initiatorType=beacon}]";
 		// get rid of array.
 		payload = payload.substring(1, payload.length() - 1);
-		Map<String, Double> data = o.CreateDateMap(payload);
+		Map<String, Double> data = chromePagePerformanceObject
+				.CreateDateMap(payload);
 		data.entrySet().stream().forEach(System.err::println);
 	}
 
 	// @Ignore
 	@Test
 	public void testUtil() {
-		ChromePagePerformanceUtil pageLoadTimer = ChromePagePerformanceUtil
+		ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
 				.getInstance();
-		double pageLoadTime = pageLoadTimer.getLoadTime(driver, baseURL,
+		double loadTime = chromePagePerformanceUtil.getLoadTime(driver, baseURL,
 				elementSelector);
-		System.out.println("Page Load Time: " + pageLoadTime);
-		Map<String, Double> pageElementTimers = pageLoadTimer
+		System.out.println("Page Load Time: " + loadTime);
+		Map<String, Double> pageElementTimers = chromePagePerformanceUtil
 				.getPageElementTimers();
 		if (conn != null) {
 			Set<String> names = pageElementTimers.keySet();

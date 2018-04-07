@@ -1,9 +1,6 @@
 package org.utils;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,20 +12,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.lang.Boolean.parseBoolean;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -38,7 +26,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
- * Selected test scenarios for Selenium WebDriver
+ * Page timing Chome browser Javascript utilities
  * @author: Serguei Kouzmine (kouzmine_serguei@yahoo.com)
  */
 
@@ -66,10 +54,10 @@ public class ChromePagePerformanceUtil {
 		return pageEventTimers;
 	}
 
-	private boolean debug = false;
+	private static boolean debug = false;
 
 	public void setDebug(boolean debug) {
-		this.debug = debug;
+		ChromePagePerformanceUtil.debug = debug;
 	}
 
 	private int flexibleWait = 30;
@@ -161,7 +149,7 @@ public class ChromePagePerformanceUtil {
 		if (debug) {
 			System.err.println("Processing result: " + result);
 		}
-		this.pageEventTimers = CreateDateMap(result);
+		this.pageEventTimers = createDateMap(result);
 	}
 
 	private double calculateLoadTime() {
@@ -175,8 +163,10 @@ public class ChromePagePerformanceUtil {
 	// type=navigate, decodedBodySize=215670, duration=5709.000000002561,
 	// redirectStart=0, connectEnd=3203.5000000032596, toJSON={},
 	// requestStart=3205.499999996391, initiatorType=beacon}]";
+
 	// TODO: use org.json
-	public Map<String, Double> CreateDateMap(String payload) {
+
+	public static Map<String, Double> createDateMap(String payload) {
 		Map<String, Double> eventData = new HashMap<>();
 		Date currDate = new Date();
 
@@ -197,7 +187,7 @@ public class ChromePagePerformanceUtil {
 		return eventData;
 	}
 
-	private Map<String, Double> CreateDateMapFromJSON(String payload)
+	private Map<String, Double> createDateMapFromJSON(String payload)
 			throws JSONException {
 
 		if (debug) {
@@ -266,7 +256,7 @@ public class ChromePagePerformanceUtil {
 	}
 
 	private void setTimerNew(WebDriver driver) {
-		this.pageElementTimers = CreateDateMapFromJSON(((JavascriptExecutor) driver)
+		this.pageElementTimers = createDateMapFromJSON(((JavascriptExecutor) driver)
 				.executeScript(performanceNetworkScript).toString());
 	}
 
