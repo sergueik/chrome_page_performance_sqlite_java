@@ -1,4 +1,4 @@
-package org.utils;
+package com.github.sergueik.utils;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

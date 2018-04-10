@@ -1,4 +1,4 @@
-package org.utils;
+package com.github.sergueik.utils;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +39,9 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.github.sergueik.utils.ChromePagePerformanceObject;
+import com.github.sergueik.utils.ChromePagePerformanceUtil;
 
 public class ChromePagePerformanceObjectTest {
 

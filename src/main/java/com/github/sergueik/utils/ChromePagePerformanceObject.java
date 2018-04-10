@@ -1,9 +1,10 @@
-package org.utils;
+package com.github.sergueik.utils;
 
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -17,6 +18,7 @@ import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -26,11 +28,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
- * Page timing Chome browser Javascript utilities
+ * Page timing Chome browser Javascript invoker wrapper
  * @author: Serguei Kouzmine (kouzmine_serguei@yahoo.com)
  */
 
-public class ChromePagePerformanceUtil {
+public class ChromePagePerformanceObject {
 
 	private static String performanceTimerScript = String.format(
 			"%s\nreturn window.timing.getTimes();",
@@ -42,94 +44,91 @@ public class ChromePagePerformanceUtil {
 	private static final String simplePerformanceTimingsScript = "var performance = window.performancevar timings = performance.timing;"
 			+ "return timings;";
 
+	private WebDriver driver;
 	private Map<String, Double> pageElementTimers;
+	private Map<String, Double> pageEventTimers;
+	private boolean debug = false;
+	private WebDriverWait wait;
+	private int flexibleWait = 30;
 
 	public Map<String, Double> getPageElementTimers() {
 		return pageElementTimers;
 	}
 
-	private Map<String, Double> pageEventTimers;
-
 	public Map<String, Double> getPageEventTimers() {
 		return pageEventTimers;
 	}
 
-	private static boolean debug = false;
-
-	public void setDebug(boolean debug) {
-		ChromePagePerformanceUtil.debug = debug;
+	public void setDebug(boolean value) {
+		this.debug = value;
 	}
-
-	private int flexibleWait = 30;
 
 	public int getFlexibleWait() {
 		return flexibleWait;
 	}
 
-	public void setFlexibleWait(int flexibleWait) {
-		this.flexibleWait = flexibleWait;
-	}
+	public ChromePagePerformanceObject(WebDriver driver, String data,
+			boolean javaScript) {
+		this.driver = driver;
+		wait = new WebDriverWait(driver, flexibleWait);
 
-	private static ChromePagePerformanceUtil ourInstance = new ChromePagePerformanceUtil();
-
-	public static ChromePagePerformanceUtil getInstance() {
-		return ourInstance;
-	}
-
-	private ChromePagePerformanceUtil() {
-	}
-
-	public double getLoadTime(WebDriver driver, String endUrl) {
-		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
-		driver.navigate().to(endUrl);
-		waitPageToLoad(driver, wait);
-		setTimer(driver);
-		return calculateLoadTime();
-	}
-
-	public double getLoadTime(WebDriver driver, By navigator) {
-		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
-		wait.until(ExpectedConditions.presenceOfElementLocated(navigator)).click();
-		waitPageToLoad(driver, wait);
-		setTimer(driver);
-		return calculateLoadTime();
-	}
-
-	public double getLoadTime(WebDriver driver, String endUrl, By navigator) {
-		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
-		driver.navigate().to(endUrl);
-		wait.until(ExpectedConditions.presenceOfElementLocated(navigator)).click();
-		waitPageToLoad(driver, wait);
-		setTimer(driver);
-		setTimerNew(driver);
-		return calculateLoadTime();
-	}
-
-	public double getLoadTime(String endUrl) {
-		WebDriver driver = new ChromeDriver();
-		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
-		driver.navigate().to(endUrl);
-		waitPageToLoad(driver, wait);
-		setTimer(driver);
-		return calculateLoadTime();
-	}
-
-	public double getLoadTime(String endUrl, By by) {
-		WebDriver driver = new ChromeDriver();
-		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
-
-		driver.navigate().to(endUrl);
-		if (by != null) {
-			wait.until(ExpectedConditions.presenceOfElementLocated(by)).click();
+		if (javaScript) {
+			JavascriptExecutor js = (JavascriptExecutor) driver;
+			js.executeScript(data);
+		} else {
+			driver.navigate().to(data);
 		}
 		waitPageToLoad(driver, wait);
 		setTimer(driver);
-		return calculateLoadTime();
+	}
+
+	public ChromePagePerformanceObject(WebDriver driver, By by) {
+		this.driver = driver;
+		if (by != null) {
+			wait = new WebDriverWait(driver, flexibleWait);
+			wait.until(ExpectedConditions.presenceOfElementLocated(by)).click();
+			waitPageToLoad(driver, wait);
+			setTimer(driver);
+		}
+	}
+
+	public ChromePagePerformanceObject(WebDriver driver, String startUrl, By by) {
+		this.driver = driver;
+		wait = new WebDriverWait(driver, flexibleWait);
+		if (startUrl != null) {
+			driver.navigate().to(startUrl);
+		}
+		if (by != null) {
+			wait.until(ExpectedConditions.presenceOfElementLocated(by)).click();
+			waitPageToLoad(driver, wait);
+			setTimer(driver);
+			setTimerNew(driver);
+		}
+	}
+
+	public ChromePagePerformanceObject(String endUrl) {
+		this.driver = new ChromeDriver();
+		this.wait = new WebDriverWait(driver, flexibleWait);
+		driver.navigate().to(endUrl);
+		waitPageToLoad(this.driver, this.wait);
+		setTimer(driver);
+	}
+
+	public ChromePagePerformanceObject(String startUrl, By by) {
+		driver = new ChromeDriver();
+		wait = new WebDriverWait(driver, flexibleWait);
+		if (startUrl != null) {
+			driver.navigate().to(startUrl);
+		}
+		if (by != null) {
+			this.wait.until(ExpectedConditions.presenceOfElementLocated(by)).click();
+		}
+		waitPageToLoad(driver, wait);
+		setTimer(driver);
 	}
 
 	private void waitPageToLoad(WebDriver driver, WebDriverWait wait) {
 		wait.until(new ExpectedCondition<Boolean>() {
-			@Override
 			public Boolean apply(WebDriver driver) {
 				return ((JavascriptExecutor) driver)
 						.executeScript("return document.readyState").toString()
@@ -139,34 +138,17 @@ public class ChromePagePerformanceUtil {
 	}
 
 	private void setTimer(WebDriver driver) {
-		String result = ((JavascriptExecutor) driver)
-				.executeScript(
-						performanceTimerScript /* simplePerformanceTimingsScript */)
-				.toString();
-		if (result == null) {
-			throw new RuntimeException("result is null");
-		}
-		if (debug) {
-			System.err.println("Processing result: " + result);
-		}
-		this.pageEventTimers = createDateMap(result);
+
+		this.pageEventTimers = CreateDateMap(((JavascriptExecutor) driver)
+				.executeScript(performanceTimerScript).toString());
 	}
 
-	private double calculateLoadTime() {
-		return pageEventTimers.get("unloadEventStart");
+	private void setTimerNew(WebDriver driver) {
+		this.pageElementTimers = CreateDateMapFromJSON(((JavascriptExecutor) driver)
+				.executeScript(performanceNetworkScript).toString());
 	}
 
-	// Example data:
-	// payload = "[{redirectCount=0, encodedBodySize=64518, unloadEventEnd=0,
-	// responseEnd=4247.699999992619, domainLookupEnd=2852.7999999932945,
-	// unloadEventStart=0, domContentLoadedEventStart=4630.699999994249,
-	// type=navigate, decodedBodySize=215670, duration=5709.000000002561,
-	// redirectStart=0, connectEnd=3203.5000000032596, toJSON={},
-	// requestStart=3205.499999996391, initiatorType=beacon}]";
-
-	// TODO: use org.json
-
-	public static Map<String, Double> createDateMap(String payload) {
+	public Map<String, Double> CreateDateMap(String payload) {
 		Map<String, Double> eventData = new HashMap<>();
 		Date currDate = new Date();
 
@@ -176,23 +158,28 @@ public class ChromePagePerformanceUtil {
 		for (String pair : pairs) {
 			String[] values = pair.split("=");
 
-			if (values[0].trim().toLowerCase().compareTo("tojson") != 0) {
+			if (values[0].trim().toLowerCase().compareTo("tojson") != 0
+					&& values[0].trim().toLowerCase().compareTo("initiatortype") != 0
+					&& values[0].trim().toLowerCase().compareTo("type") != 0) {
 				if (debug) {
 					System.err.println("Collecting: " + pair);
 				}
-				eventData.put(values[0].trim(),
-						((currDate.getTime() - Long.valueOf(values[1]))) / 1000.0);
+				try {
+					eventData.put(values[0].trim(),
+							((currDate.getTime() - Double.valueOf(values[1]))) / 1000.0);
+				} catch (NumberFormatException e) {
+					// ignore
+					System.err.println(String.format("Exception (ignored) %s for %s = %s",
+							e.toString(), values[0], values[1]));
+				}
 			}
 		}
 		return eventData;
 	}
 
-	private Map<String, Double> createDateMapFromJSON(String payload)
+	private Map<String, Double> CreateDateMapFromJSON(String payload)
 			throws JSONException {
 
-		if (debug) {
-			System.err.println("payload: " + payload);
-		}
 		List<Map<String, String>> result = new ArrayList<>();
 		// select columns to collect
 		Pattern columnSelectionattern = Pattern.compile("(?:name|duration)");
@@ -255,9 +242,92 @@ public class ChromePagePerformanceUtil {
 		return pageObjectTimers;
 	}
 
-	private void setTimerNew(WebDriver driver) {
-		this.pageElementTimers = createDateMapFromJSON(((JavascriptExecutor) driver)
-				.executeScript(performanceNetworkScript).toString());
+	public double getLoadTime() {
+		return pageEventTimers.get("unloadEventStart");
+	}
+
+	public double connectEnd() {
+		return pageEventTimers.get("connectEnd");
+	}
+
+	public double connectStart() {
+		return pageEventTimers.get("connectStart");
+	}
+
+	public double domComplete() {
+		return pageEventTimers.get("domComplete");
+	}
+
+	public double domContentLoadedEventEnd() {
+		return pageEventTimers.get("domContentLoadedEventEnd");
+	}
+
+	public double domContentLoadedEventStart() {
+		return pageEventTimers.get("domContentLoadedEventStart");
+	}
+
+	public double domInteractive() {
+		return pageEventTimers.get("domInteractive");
+	}
+
+	public double domLoading() {
+		return pageEventTimers.get("domLoading");
+	}
+
+	public double domainLookupEnd() {
+		return pageEventTimers.get("domainLookupEnd");
+	}
+
+	public double domainLookupStart() {
+		return pageEventTimers.get("domainLookupStart");
+	}
+
+	public double fetchStart() {
+		return pageEventTimers.get("fetchStart");
+	}
+
+	public double loadEventEnd() {
+		return pageEventTimers.get("loadEventEnd");
+	}
+
+	public double loadEventStart() {
+		return pageEventTimers.get("loadEventStart");
+	}
+
+	public double navigationStart() {
+		return pageEventTimers.get("navigationStart");
+	}
+
+	public double redirectEnd() {
+		return pageEventTimers.get("redirectEnd");
+	}
+
+	public double redirectStart() {
+		return pageEventTimers.get("redirectStart");
+	}
+
+	public double requestStart() {
+		return pageEventTimers.get("requestStart");
+	}
+
+	public double responseEnd() {
+		return pageEventTimers.get("responseEnd");
+	}
+
+	public double responseStart() {
+		return pageEventTimers.get("responseStart");
+	}
+
+	public double secureConnectionStart() {
+		return pageEventTimers.get("secureConnectionStart");
+	}
+
+	public double unloadEventEnd() {
+		return pageEventTimers.get("unloadEventEnd");
+	}
+
+	public double unloadEventStart() {
+		return pageEventTimers.get("unloadEventStart");
 	}
 
 	protected static String getScriptContent(String scriptName) {
@@ -270,5 +340,11 @@ public class ChromePagePerformanceUtil {
 		} catch (IOException e) {
 			throw new RuntimeException(scriptName);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "org.utils.ChromePagePerformanceObject{" + "pageEventTimers="
+				+ pageEventTimers.toString() + '}';
 	}
 }
