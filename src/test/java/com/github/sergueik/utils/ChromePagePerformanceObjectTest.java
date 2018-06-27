@@ -53,25 +53,24 @@ public class ChromePagePerformanceObjectTest {
 	// private static String baseURL = "https://www.royalcaribbean.com/";
 	// private static By elementSelector = By.id("find-a-cruise");
 
-	// private static String baseURL = "https://www.expedia.com/";
-	// private static By elementSelector = By.cssSelector(
-	// "#tab-flight-tab-hp > span.icons-container" );
+	private static String baseURL = "https://www.expedia.com/";
+	private static By elementSelector = By.cssSelector(
+	 "#tab-flight-tab-hp > span.icons-container" );
 
-	private static String baseURL = "https://www.priceline.com/";
+	/* private static String baseURL = "https://www.priceline.com/";
 	private static By elementSelector = By.cssSelector(
 			"#global-header-nav-section > ul > li.global-header-nav-product-item.global-header-nav-product-item-hotels > a");
-
+*/
 	private static String sql;
 
 	@SuppressWarnings("deprecation")
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 		getOsName();
-
 		System.setProperty("webdriver.chrome.driver",
 				osName.toLowerCase().startsWith("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
-						: "/var/run/chromedriver");
+						: System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
 		ChromeOptions options = new ChromeOptions();
 

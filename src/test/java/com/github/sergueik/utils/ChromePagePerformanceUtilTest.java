@@ -50,7 +50,7 @@ public class ChromePagePerformanceUtilTest {
 		System.setProperty("webdriver.chrome.driver",
 				osName.toLowerCase().startsWith("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
-						: "/var/run/chromedriver");
+						:  System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
 		ChromeOptions options = new ChromeOptions();
 

@@ -12,6 +12,7 @@ return timings;
 Alternaively the more advanced `timing.js` script from [Addy Osmani's repository](https://github.com/addyosmani/timing.js/blob/master/timing.js
 ) is called, and the results are deserialized into a `Map<String, Double>` either implicitly by deserializing the string value produced by `JSON.stringify()` method with [one of many available](https://stleary.github.io/JSON-java/) __JSON__ parsing libraries or by extracting the object via home-brewed parser of the value returned by Javascript API, as shown below.
 
+![data.db](https://github.com/sergueik/chrome_page_performance_sqlite_java/blob/master/screenshots/data.png)
 
 See [https://github.com/addyosmani/timing.js/blob/master/timing.js](https://github.com/addyosmani/timing.js/blob/master/timing.js) for details of how the `timings.loadTime`,`timings.domReadyTime`  etc. are calculated):
 ```javascript
@@ -102,8 +103,7 @@ of (when `opt[stringify]` is set):
 ```
 The Java application subsequently dumps the results ino SQLite database using [JDBC](https://www.tutorialspoint.com/sqlite/sqlite_java.htm)
 
-
-This is a lot easier than processing the full SeleniumDriver log: 
+This is a lot easier to process than the full SeleniumDriver log: 
 ```java
 ChromeOptions options = new ChromeOptions();
 LoggingPreferences loggingPreferences = new LoggingPreferences();
