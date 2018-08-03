@@ -64,6 +64,18 @@ public class CommonUtils {
 			System.err.println(e.getMessage());
 		}
 	}
+	// origin:
+	// https://github.com/TsvetomirSlavov/wdci/blob/master/code/src/main/java/com/seleniumsimplified/webdriver/manager/EnvironmentPropertyReader.java
+	public static String getPropertyEnv(String name, String defaultValue) {
+		String value = System.getProperty(name);
+		if (value == null) {
+			value = System.getenv(name);
+			if (value == null) {
+				value = defaultValue;
+			}
+		}
+		return value;
+	}
 
 	// http://www.sqlitetutorial.net/sqlite-java/insert/
 	public static void insertData(String name, double duration) {

@@ -48,7 +48,7 @@ public class ChromePagePerformanceObjectTest {
 	private static WebDriver driver;
 	private static Connection conn;
 	private static String osName;
-	private static boolean headless = true;
+	private static boolean headless = Boolean.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS","true"));
 
 	// private static String baseURL = "https://www.royalcaribbean.com/";
 	// private static By elementSelector = By.id("find-a-cruise");
