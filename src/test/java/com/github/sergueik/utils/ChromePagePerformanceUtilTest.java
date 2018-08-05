@@ -37,7 +37,8 @@ public class ChromePagePerformanceUtilTest {
 
 	private static WebDriver driver;
 	private static String osName;
-	private static boolean headless = Boolean.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS","true"));
+	private static boolean headless = Boolean
+			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "true"));
 	// private static boolean headless = true;
 
 	private static String baseURL = "https://www.royalcaribbean.com/";
@@ -46,12 +47,12 @@ public class ChromePagePerformanceUtilTest {
 	@SuppressWarnings("deprecation")
 	@BeforeClass
 	public static void beforeClass() throws IOException {
-		getOsName();
+		osName = CommonUtils.getOSName();
 
 		System.setProperty("webdriver.chrome.driver",
 				osName.toLowerCase().startsWith("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
-						:  System.getenv("HOME") + "/Downloads/chromedriver");
+						: System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
 		ChromeOptions options = new ChromeOptions();
 
@@ -157,14 +158,6 @@ public class ChromePagePerformanceUtilTest {
 		} catch (TimeoutException e) {
 
 		}
-	}
-
-	// Utilities
-	public static String getOsName() {
-		if (osName == null) {
-			osName = System.getProperty("os.name");
-		}
-		return osName;
 	}
 
 }

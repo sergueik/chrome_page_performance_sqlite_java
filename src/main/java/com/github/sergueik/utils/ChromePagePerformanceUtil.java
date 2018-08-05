@@ -2,8 +2,10 @@ package com.github.sergueik.utils;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -12,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -21,23 +24,44 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
- * Page timing Chome browser Javascript utilities
+ * Page timing Javascript utilities supported by Chome browser, and partially, by Firefox, IE and Edge
  * @author: Serguei Kouzmine (kouzmine_serguei@yahoo.com)
  */
 
 public class ChromePagePerformanceUtil {
 
+	private static String osName = getOSName();
 	private static String performanceTimerScript = String.format(
 			"%s\nreturn window.timing.getTimes();",
 			getScriptContent("performance_script.js"));
 	private static String performanceNetworkScript = String.format(
 			"%s\nreturn window.timing.getNetwork({stringify:true});",
 			getScriptContent("performance_script.js"));
+
+	private static final String browserDriverPath = osName.contains("windows")
+			? String.format("%s/Downloads", System.getenv("USERPROFILE"))
+			: String.format("%s/Downloads", System.getenv("HOME"));
+	private static final Map<String, String> browserDrivers = new HashMap<>();
+	static final String browser = "chrome";
+	static {
+		browserDrivers.put("chrome",
+				osName.contains("windows") ? "chromedriver.exe" : "chromedriver");
+		browserDrivers.put("firefox",
+				osName.contains("windows") ? "geckodriver.exe" : "geckodriver");
+		browserDrivers.put("edge", "MicrosoftWebDriver.exe");
+	}
+	private static final Map<String, String> browserDriverProperties = new HashMap<>();
+	static {
+		browserDriverProperties.put("chrome", "webdriver.chrome.driver");
+		browserDriverProperties.put("firefox", "webdriver.gecko.driver");
+		browserDriverProperties.put("edge", "webdriver.edge.driver");
+	}
 
 	private static final String simplePerformanceTimingsScript = "var performance = window.performancevar timings = performance.timing;"
 			+ "return timings;";
@@ -106,7 +130,18 @@ public class ChromePagePerformanceUtil {
 	}
 
 	public double getLoadTime(String endUrl) {
+		System.setProperty(browserDriverProperties.get(browser),
+				osName.contains("windows")
+						? new File(String.format("%s/%s", browserDriverPath,
+								browserDrivers.get(browser))).getAbsolutePath()
+						: String.format("%s/%s", browserDriverPath,
+								browserDrivers.get(browser)));
 		WebDriver driver = new ChromeDriver();
+		// see
+		// http://www.automationtestinghub.com/selenium-3-launch-microsoft-edge-with-microsoftwebdriver/
+		// System.setProperty("webdriver.edge.driver", new
+		// File("c:/java/selenium/MicrosoftWebDriver.exe")).getAbsolutePath() );
+		// WebDriver driver = new EdgeDriver();
 		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
 		driver.navigate().to(endUrl);
 		waitPageToLoad(driver, wait);
@@ -271,4 +306,15 @@ public class ChromePagePerformanceUtil {
 			throw new RuntimeException(scriptName);
 		}
 	}
+
+	public static String getOSName() {
+		if (osName == null) {
+			osName = System.getProperty("os.name").toLowerCase();
+			if (osName.startsWith("windows")) {
+				osName = "windows";
+			}
+		}
+		return osName;
+	}
+
 }

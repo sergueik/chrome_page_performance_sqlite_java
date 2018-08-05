@@ -48,25 +48,26 @@ public class ChromePagePerformanceObjectTest {
 	private static WebDriver driver;
 	private static Connection conn;
 	private static String osName;
-	private static boolean headless = Boolean.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS","true"));
+	private static boolean headless = Boolean
+			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "true"));
 
 	// private static String baseURL = "https://www.royalcaribbean.com/";
 	// private static By elementSelector = By.id("find-a-cruise");
 
 	private static String baseURL = "https://www.expedia.com/";
-	private static By elementSelector = By.cssSelector(
-	 "#tab-flight-tab-hp > span.icons-container" );
+	private static By elementSelector = By
+			.cssSelector("#tab-flight-tab-hp > span.icons-container");
 
 	/* private static String baseURL = "https://www.priceline.com/";
 	private static By elementSelector = By.cssSelector(
 			"#global-header-nav-section > ul > li.global-header-nav-product-item.global-header-nav-product-item-hotels > a");
-*/
+	*/
 	private static String sql;
 
 	@SuppressWarnings("deprecation")
 	@BeforeClass
 	public static void beforeClass() throws IOException {
-		getOsName();
+		osName = CommonUtils.getOSName();
 		System.setProperty("webdriver.chrome.driver",
 				osName.toLowerCase().startsWith("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
@@ -271,14 +272,6 @@ public class ChromePagePerformanceObjectTest {
 				insertData(name, pageElementTimers.get(name));
 			}
 		}
-	}
-
-	// Utilities
-	public static String getOsName() {
-		if (osName == null) {
-			osName = System.getProperty("os.name");
-		}
-		return osName;
 	}
 
 	// http://www.sqlitetutorial.net/sqlite-java/create-table/

@@ -40,13 +40,15 @@ public class CommonUtils {
 	private static Connection conn;
 
 	// Utilities
-	public static String getOsName() {
+	public static String getOSName() {
 		if (osName == null) {
-			osName = System.getProperty("os.name");
+			osName = System.getProperty("os.name").toLowerCase();
+			if (osName.startsWith("windows")) {
+				osName = "windows";
+			}
 		}
 		return osName;
 	}
-
 	// http://www.sqlitetutorial.net/sqlite-java/create-table/
 	public static void createNewTable() {
 		sql = "DROP TABLE IF EXISTS performance";
