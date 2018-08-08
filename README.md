@@ -352,6 +352,8 @@ which looks like
 ```
 
 Loading results into ELK is a work in progress.
+Some tests work successfully only when the browser is visible , and fail with timeout exception when headless. 
+It is not related to the main objective of this project.
 
 ### See Also
 

@@ -36,7 +36,13 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class ChromePagePerformanceUtil {
 
-	private static String osName = getOSName();
+	static String browser = "chrome";
+	
+	public static void setBrowser(String browser) {
+		ChromePagePerformanceUtil.browser = browser;
+	}
+
+	private static String osName = CommonUtils.getOSName();
 	private static String performanceTimerScript = String.format(
 			"%s\nreturn window.timing.getTimes();",
 			getScriptContent("performance_script.js"));
@@ -48,7 +54,6 @@ public class ChromePagePerformanceUtil {
 			? String.format("%s/Downloads", System.getenv("USERPROFILE"))
 			: String.format("%s/Downloads", System.getenv("HOME"));
 	private static final Map<String, String> browserDrivers = new HashMap<>();
-	static final String browser = "chrome";
 	static {
 		browserDrivers.put("chrome",
 				osName.contains("windows") ? "chromedriver.exe" : "chromedriver");
@@ -130,22 +135,36 @@ public class ChromePagePerformanceUtil {
 	}
 
 	public double getLoadTime(String endUrl) {
+		WebDriver driver = null;
 		System.setProperty(browserDriverProperties.get(browser),
 				osName.contains("windows")
 						? new File(String.format("%s/%s", browserDriverPath,
 								browserDrivers.get(browser))).getAbsolutePath()
 						: String.format("%s/%s", browserDriverPath,
 								browserDrivers.get(browser)));
-		WebDriver driver = new ChromeDriver();
-		// see
-		// http://www.automationtestinghub.com/selenium-3-launch-microsoft-edge-with-microsoftwebdriver/
-		// System.setProperty("webdriver.edge.driver", new
-		// File("c:/java/selenium/MicrosoftWebDriver.exe")).getAbsolutePath() );
-		// WebDriver driver = new EdgeDriver();
+
+		System.err.println("browser: " + browser);						
+		if (browser.contains("edge")) {
+			// http://www.automationtestinghub.com/selenium-3-launch-microsoft-edge-with-microsoftwebdriver/
+			// This version of MicrosoftWebDriver.exe is not compatible with the installed version of Windows 10.
+			// observed with Windows 10 build 15063 (10.0.15063.0), 
+			// MicrosoftWebDriver.exe build 17134 (10.0.17134.1)).
+			// 
+			try {
+			  driver = new EdgeDriver();
+			} catch (Exception e) {
+			  System.err.println("Exception (ignord): " + e.toString());	
+			}
+		} else {
+			driver = new ChromeDriver();
+		}
+
 		WebDriverWait wait = new WebDriverWait(driver, flexibleWait);
 		driver.navigate().to(endUrl);
+
 		waitPageToLoad(driver, wait);
 		setTimer(driver);
+		// setTimerNew(driver);
 		return calculateLoadTime();
 	}
 
@@ -305,16 +324,6 @@ public class ChromePagePerformanceUtil {
 		} catch (IOException e) {
 			throw new RuntimeException(scriptName);
 		}
-	}
-
-	public static String getOSName() {
-		if (osName == null) {
-			osName = System.getProperty("os.name").toLowerCase();
-			if (osName.startsWith("windows")) {
-				osName = "windows";
-			}
-		}
-		return osName;
 	}
 
 }

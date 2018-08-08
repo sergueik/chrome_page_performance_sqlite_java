@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.openqa.selenium.TimeoutException;
@@ -36,7 +37,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class ChromePagePerformanceUtilTest {
 
 	private static WebDriver driver;
-	private static String osName;
+	private static String osName = CommonUtils.getOSName();
 	private static boolean headless = Boolean
 			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "true"));
 	// private static boolean headless = true;
@@ -47,10 +48,9 @@ public class ChromePagePerformanceUtilTest {
 	@SuppressWarnings("deprecation")
 	@BeforeClass
 	public static void beforeClass() throws IOException {
-		osName = CommonUtils.getOSName();
-
+		
 		System.setProperty("webdriver.chrome.driver",
-				osName.toLowerCase().startsWith("windows")
+				osName.contains("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
 						: System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
@@ -80,7 +80,7 @@ public class ChromePagePerformanceUtilTest {
 		// options for headless
 		if (headless) {
 			// headless option arguments
-			for (String option : (osName.toLowerCase().startsWith("windows"))
+			for (String option : (osName.contains("windows"))
 					? new String[] { "headless", "disable-gpu", "disable-plugins",
 							"window-size=1200x600", "window-position=-9999,0" }
 					: new String[] { "headless", "disable-gpu",
@@ -105,6 +105,12 @@ public class ChromePagePerformanceUtilTest {
 		driver = new ChromeDriver(capabilities);
 
 		assertThat(driver, notNullValue());
+	}
+
+	@AfterClass
+	public static void teardown() {
+		driver.close();
+		driver.quit();
 	}
 
 	@Before
@@ -136,13 +142,7 @@ public class ChromePagePerformanceUtilTest {
 
 	}
 
-	@AfterClass
-	public static void teardown() {
-		driver.close();
-		driver.quit();
-	}
-
-	// @Ignore
+	@Ignore
 	@Test
 	public void testnavigateBaseURL() {
 		System.err.println("base URL loading test");

@@ -47,17 +47,17 @@ public class ChromePagePerformanceObjectTest {
 
 	private static WebDriver driver;
 	private static Connection conn;
-	private static String osName;
+	private static String browser = "chrome";
+	private static String osName = CommonUtils.getOSName();
 	private static boolean headless = Boolean
-			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "true"));
+			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "false"));
 
 	// private static String baseURL = "https://www.royalcaribbean.com/";
 	// private static By elementSelector = By.id("find-a-cruise");
 
 	private static String baseURL = "https://www.expedia.com/";
 	private static By elementSelector = By
-			.cssSelector("#tab-flight-tab-hp > span.icons-container");
-
+			.cssSelector("button#tab-flight-tab-hp");
 	/* private static String baseURL = "https://www.priceline.com/";
 	private static By elementSelector = By.cssSelector(
 			"#global-header-nav-section > ul > li.global-header-nav-product-item.global-header-nav-product-item-hotels > a");
@@ -67,9 +67,9 @@ public class ChromePagePerformanceObjectTest {
 	@SuppressWarnings("deprecation")
 	@BeforeClass
 	public static void beforeClass() throws IOException {
-		osName = CommonUtils.getOSName();
+
 		System.setProperty("webdriver.chrome.driver",
-				osName.toLowerCase().startsWith("windows")
+				osName.contains("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
 						: System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
@@ -189,7 +189,8 @@ public class ChromePagePerformanceObjectTest {
 		}
 	}
 
-	// @Ignore
+	@Ignore
+	// NOTE: only works with HEADLESS = false
 	@Test
 	public void testSetTimer() {
 		double test = new ChromePagePerformanceObject(driver, baseURL,
@@ -197,7 +198,7 @@ public class ChromePagePerformanceObjectTest {
 		System.err.println(test);
 	}
 
-	// @Ignore
+	@Ignore
 	@Test
 	public void testRecordSplitter() {
 		String payload = "{stuff} , {redirectCount=0, encodedBodySize=64518, unloadEventEnd=0, responseEnd=4247.699999992619, domainLookupEnd=2852.7999999932945, unloadEventStart=0, domContentLoadedEventStart=4630.699999994249, type=navigate, decodedBodySize=215670, duration=5709.000000002561, redirectStart=0, connectEnd=3203.5000000032596, toJSON={}, requestStart=3205.499999996391, initiatorType=beacon}, {some other stuff}";
@@ -243,7 +244,7 @@ public class ChromePagePerformanceObjectTest {
 		}
 	}
 
-	// @Ignore
+	@Ignore
 	@Test
 	public void testChromePagePerformanceObjectParse() {
 		ChromePagePerformanceObject chromePagePerformanceObject = new ChromePagePerformanceObject(
@@ -258,9 +259,32 @@ public class ChromePagePerformanceObjectTest {
 
 	// @Ignore
 	@Test
+	public void testEdgePagePerformanceCollection() {
+		if (CommonUtils.isWindow10()) {
+			ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
+					.getInstance();
+			ChromePagePerformanceUtil.setBrowser("edge");
+			double loadTime = chromePagePerformanceUtil.getLoadTime( baseURL );
+			System.out.println("Page Load Time: " + loadTime);
+			Map<String, Double> pageElementTimers = chromePagePerformanceUtil
+					.getPageElementTimers();
+			if (pageElementTimers!=null){
+			  Set<String> names = pageElementTimers.keySet();
+			  for (String name : names) {
+		         System.out.println(name + " "+ pageElementTimers.get(name));
+			  }
+			}
+		}
+
+	}
+
+	@Ignore
+	// NOTE: only works with HEADLESS = false
+	@Test
 	public void testUtil() {
 		ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
 				.getInstance();
+		ChromePagePerformanceUtil.setBrowser(browser);
 		double loadTime = chromePagePerformanceUtil.getLoadTime(driver, baseURL,
 				elementSelector);
 		System.out.println("Page Load Time: " + loadTime);
