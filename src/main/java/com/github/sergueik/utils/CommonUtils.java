@@ -109,6 +109,8 @@ public class CommonUtils {
 
 	// https://stackoverflow.com/questions/31072543/reliable-way-to-get-windows-version-from-registry
 	// CurrentMajorVersionNumber present in registry starting with Windows 10
+	// NOTE: systeminfo.exe is too slow
+	// https://stackoverflow.com/questions/6109679/how-to-check-windows-edition-in-java
 	public static boolean window10Check() {
 		String regPath = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 		int majorVersionNumber = 0;

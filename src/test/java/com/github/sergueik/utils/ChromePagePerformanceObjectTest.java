@@ -121,8 +121,13 @@ public class ChromePagePerformanceObjectTest {
 			// origin:
 			// https://www.tutorialspoint.com/sqlite/sqlite_java.htm
 			Class.forName("org.sqlite.JDBC");
-			// String dbURL = "jdbc:sqlite:performance.db";
-			conn = DriverManager.getConnection("jdbc:sqlite:performance.db");
+			String dbURL = resolveEnvVars(
+					"jdbc:sqlite:${USERPROFILE}\\Desktop\\sqlite_database_name.db");
+			// NOTE: SQLite driver on its own will not create folders to construct
+			// path to the file,
+			// default is current project directory
+			dbURL = "jdbc:sqlite:performance.db";
+			conn = DriverManager.getConnection(dbURL);
 			if (conn != null) {
 				// System.out.println("Connected to the database");
 				DatabaseMetaData databaseMetadata = conn.getMetaData();
@@ -264,15 +269,15 @@ public class ChromePagePerformanceObjectTest {
 			ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
 					.getInstance();
 			ChromePagePerformanceUtil.setBrowser("edge");
-			double loadTime = chromePagePerformanceUtil.getLoadTime( baseURL );
+			double loadTime = chromePagePerformanceUtil.getLoadTime(baseURL);
 			System.out.println("Page Load Time: " + loadTime);
 			Map<String, Double> pageElementTimers = chromePagePerformanceUtil
 					.getPageElementTimers();
-			if (pageElementTimers!=null){
-			  Set<String> names = pageElementTimers.keySet();
-			  for (String name : names) {
-		         System.out.println(name + " "+ pageElementTimers.get(name));
-			  }
+			if (pageElementTimers != null) {
+				Set<String> names = pageElementTimers.keySet();
+				for (String name : names) {
+					System.out.println(name + " " + pageElementTimers.get(name));
+				}
 			}
 		}
 
@@ -326,6 +331,35 @@ public class ChromePagePerformanceObjectTest {
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
+	}
+
+	// https://github.com/TsvetomirSlavov/wdci/blob/master/code/src/main/java/com/seleniumsimplified/webdriver/manager/EnvironmentPropertyReader.java
+	public static String getPropertyEnv(String name, String defaultValue) {
+		String value = System.getProperty(name);
+		if (value == null) {
+			value = System.getenv(name);
+			if (value == null) {
+				value = defaultValue;
+			}
+		}
+		return value;
+	}
+
+	public static String resolveEnvVars(String input) {
+		if (null == input) {
+			return null;
+		}
+		Pattern p = Pattern.compile("\\$(?:\\{(?:env:)?(\\w+)\\}|(\\w+))");
+		Matcher m = p.matcher(input);
+		StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
+			String envVarValue = System.getenv(envVarName);
+			m.appendReplacement(sb,
+					null == envVarValue ? "" : envVarValue.replace("\\", "\\\\"));
+		}
+		m.appendTail(sb);
+		return sb.toString();
 	}
 
 }
