@@ -378,6 +378,9 @@ public class ChromePagePerformanceObjectTest {
 	}
 
 	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
+	// uncomment the next statement to get exercise the other formatting
+	// private final static String extractQuery = "SELECT name, duration FROM
+	// performance where name = '?'";
 	private static final String extractQueryTemplate = "SELECT name, duration FROM performance where name = '%s'";
 
 	public static void printData(String key) {
