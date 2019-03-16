@@ -10,8 +10,10 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,6 +51,8 @@ public class ChromePagePerformanceObjectTest {
 	private static Connection conn;
 	private static String browser = "chrome";
 	private static String osName = CommonUtils.getOSName();
+	private static final boolean debug = Boolean
+			.parseBoolean(System.getenv("DEBUG"));
 	private static boolean headless = Boolean
 			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "false"));
 
@@ -63,6 +67,13 @@ public class ChromePagePerformanceObjectTest {
 			"#global-header-nav-section > ul > li.global-header-nav-product-item.global-header-nav-product-item-hotels > a");
 	*/
 	private static String sql;
+	// NOTE: SQLite driver on its own will not create folders to construct
+	// path to the file,
+	// default is current project directory
+	// dbURL = "jdbc:sqlite:performance.db";
+	private static final String sqlite_database_name = "sqlite_database_name";
+	private static final String dbURL = resolveEnvVars(String.format(
+			"jdbc:sqlite:${USERPROFILE}\\Desktop\\%s.db", sqlite_database_name));
 
 	@SuppressWarnings("deprecation")
 	@BeforeClass
@@ -121,22 +132,16 @@ public class ChromePagePerformanceObjectTest {
 			// origin:
 			// https://www.tutorialspoint.com/sqlite/sqlite_java.htm
 			Class.forName("org.sqlite.JDBC");
-			String dbURL = resolveEnvVars(
-					"jdbc:sqlite:${USERPROFILE}\\Desktop\\sqlite_database_name.db");
-			// NOTE: SQLite driver on its own will not create folders to construct
-			// path to the file,
-			// default is current project directory
-			dbURL = "jdbc:sqlite:performance.db";
 			conn = DriverManager.getConnection(dbURL);
 			if (conn != null) {
-				// System.out.println("Connected to the database");
+				System.err.println("Connected to the database " + dbURL);
 				DatabaseMetaData databaseMetadata = conn.getMetaData();
-				System.out.println("Driver name: " + databaseMetadata.getDriverName());
-				System.out
+				System.err.println("Driver name: " + databaseMetadata.getDriverName());
+				System.err
 						.println("Driver version: " + databaseMetadata.getDriverVersion());
-				System.out.println(
+				System.err.println(
 						"Product name: " + databaseMetadata.getDatabaseProductName());
-				System.out.println(
+				System.err.println(
 						"Product version: " + databaseMetadata.getDatabaseProductVersion());
 				createNewTable();
 				// insertData("name", 1.0);
@@ -195,15 +200,19 @@ public class ChromePagePerformanceObjectTest {
 	}
 
 	@Ignore
-	// NOTE: only works with HEADLESS = false
 	@Test
 	public void testSetTimer() {
+		if (headless) {
+			System.err.println("This test only works with HEADLESS = false");
+			return;
+		}
 		double test = new ChromePagePerformanceObject(driver, baseURL,
 				elementSelector).getLoadTime();
 		System.err.println(test);
+
 	}
 
-	@Ignore
+	// @Ignore
 	@Test
 	public void testRecordSplitter() {
 		String payload = "{stuff} , {redirectCount=0, encodedBodySize=64518, unloadEventEnd=0, responseEnd=4247.699999992619, domainLookupEnd=2852.7999999932945, unloadEventStart=0, domContentLoadedEventStart=4630.699999994249, type=navigate, decodedBodySize=215670, duration=5709.000000002561, redirectStart=0, connectEnd=3203.5000000032596, toJSON={}, requestStart=3205.499999996391, initiatorType=beacon}, {some other stuff}";
@@ -244,7 +253,6 @@ public class ChromePagePerformanceObjectTest {
 			if (matcher.find()) {
 				new ArrayList<String>(Arrays.asList(payload.split(splitter))).stream()
 						.forEach(System.err::println);
-
 			}
 		}
 	}
@@ -270,23 +278,26 @@ public class ChromePagePerformanceObjectTest {
 					.getInstance();
 			ChromePagePerformanceUtil.setBrowser("edge");
 			double loadTime = chromePagePerformanceUtil.getLoadTime(baseURL);
-			System.out.println("Page Load Time: " + loadTime);
+			System.err.println("Page Load Time: " + loadTime);
 			Map<String, Double> pageElementTimers = chromePagePerformanceUtil
 					.getPageElementTimers();
 			if (pageElementTimers != null) {
 				Set<String> names = pageElementTimers.keySet();
 				for (String name : names) {
-					System.out.println(name + " " + pageElementTimers.get(name));
+					System.err.println(name + " " + pageElementTimers.get(name));
 				}
 			}
 		}
 
 	}
 
-	@Ignore
-	// NOTE: only works with HEADLESS = false
+	// @Ignore
 	@Test
 	public void testUtil() {
+		if (headless) {
+			System.err.println("This test only works with HEADLESS = false");
+			return;
+		}
 		ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
 				.getInstance();
 		ChromePagePerformanceUtil.setBrowser(browser);
@@ -299,6 +310,10 @@ public class ChromePagePerformanceObjectTest {
 			Set<String> names = pageElementTimers.keySet();
 			for (String name : names) {
 				insertData(name, pageElementTimers.get(name));
+				if (debug) {
+					System.err.println("Reading data");
+					printData(name);
+				}
 			}
 		}
 	}
@@ -362,4 +377,49 @@ public class ChromePagePerformanceObjectTest {
 		return sb.toString();
 	}
 
+	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
+	private static final String extractQueryTemplate = "SELECT name, duration FROM performance where name = '%s'";
+
+	public static void printData(String key) {
+		ResultSet result = null;
+		try {
+			System.err.println("Prepare statement: " + extractQuery);
+			PreparedStatement _statement = conn.prepareStatement(extractQuery);
+			_statement.setString(1, key);
+			result = _statement.executeQuery();
+		} catch (Exception e) {
+			System.err.println("Exception(ignored): " + e.toString());
+			// NOTE: there must be NO quotes around ? parameter in where or the
+			// following
+			// java.lang.ArrayIndexOutOfBoundsException:
+			// at org.sqlite.jdbc3.JDBC3PreparedStatement.setString
+			// TODO: pre-validate
+			// see also extractQueryTemplate below
+			try {
+				System.err.println("Format statement query: " + extractQueryTemplate);
+				Statement _statement = conn.createStatement();
+				result = _statement
+						.executeQuery(String.format(extractQueryTemplate, key));
+			} catch (Exception e2) {
+				e2.printStackTrace();
+			}
+
+		}
+
+		if (result != null) {
+			System.err.println("Got results:");
+			try {
+				while (result.next()) {
+					String name = result.getString(1);
+					Double duration = result.getDouble(2);
+					System.err.println("name: " + name);
+					System.err.println(
+							"duration: " + (new DecimalFormat("####.##")).format(duration));
+					// System.err.println(String.format("duration: %.2f", duration));
+				}
+			} catch (SQLException e) {
+				System.err.println("Exception(ignored): " + e.toString());
+			}
+		}
+	}
 }
