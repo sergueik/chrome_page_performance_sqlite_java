@@ -53,8 +53,13 @@ public class ChromePagePerformanceObjectTest {
 	private static final String osName = CommonUtils.getOSName();
 	private static final boolean headless = Boolean.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "false"));
 	private static final boolean useLocalDb = Boolean.parseBoolean(CommonUtils.getPropertyEnv("LOCAL", "false"));
-	private static final boolean debug = Boolean
-			.parseBoolean(System.getenv("DEBUG"));
+	private static final boolean debug = Boolean.parseBoolean(System.getenv("DEBUG"));
+
+	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
+	// uncomment the next statement to get exercise the other formatting
+	// private final static String extractQuery = "SELECT name, duration FROM
+	// performance where name = '?'";
+	private static final String extractQueryTemplate = "SELECT name, duration FROM performance where name = '%s' order by name";
 
 	// private static String baseURL = "https://www.royalcaribbean.com/";
 	// private static By elementSelector = By.id("find-a-cruise");
@@ -73,8 +78,8 @@ public class ChromePagePerformanceObjectTest {
 	// default is current project directory
 	// dbURL = "jdbc:sqlite:performance.db";
 	private static final String sqlite_database_name = "sqlite_database_name";
-	private static final String dbURL = CommonUtils.resolveEnvVars(String.format(
-			"jdbc:sqlite:${USERPROFILE}\\Desktop\\%s.db", sqlite_database_name));
+	private static final String dbURL = CommonUtils
+			.resolveEnvVars(String.format("jdbc:sqlite:${USERPROFILE}\\Desktop\\%s.db", sqlite_database_name));
 
 	@SuppressWarnings("deprecation")
 
@@ -374,14 +379,19 @@ public class ChromePagePerformanceObjectTest {
 		return value;
 	}
 
-	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
-	// uncomment the next statement to get exercise the other formatting
-	// private final static String extractQuery = "SELECT name, duration FROM
-	// performance where name = '?'";
-	private static final String extractQueryTemplate = "SELECT name, duration FROM performance where name = '%s'";
-
 	public static void printData(String key) {
 		ResultSet result = null;
+
+		try {
+			String sql1 = "EXPLAIN QUERY PLAN " + extractQuery;
+			System.err.println("Prepare statement: " + sql1);
+			PreparedStatement _statement = conn.prepareStatement(sql1);
+			_statement.setString(1, key);
+			result = _statement.executeQuery();
+			System.err.println("Result: " + result);
+		} catch (Exception e) {
+			System.err.println("Exception(ignored): " + e.toString());
+		}
 		try {
 			System.err.println("Prepare statement: " + extractQuery);
 			PreparedStatement _statement = conn.prepareStatement(extractQuery);
@@ -398,8 +408,7 @@ public class ChromePagePerformanceObjectTest {
 			try {
 				System.err.println("Format statement query: " + extractQueryTemplate);
 				Statement _statement = conn.createStatement();
-				result = _statement
-						.executeQuery(String.format(extractQueryTemplate, key));
+				result = _statement.executeQuery(String.format(extractQueryTemplate, key));
 			} catch (Exception e2) {
 				e2.printStackTrace();
 			}
@@ -413,9 +422,9 @@ public class ChromePagePerformanceObjectTest {
 					String name = result.getString(1);
 					Double duration = result.getDouble(2);
 					System.err.println("name: " + name);
-					System.err.println(
-							"duration: " + (new DecimalFormat("####.##")).format(duration));
-					// System.err.println(String.format("duration: %.2f", duration));
+					System.err.println("duration: " + (new DecimalFormat("####.##")).format(duration));
+					// System.err.println(String.format("duration: %.2f",
+					// duration));
 				}
 			} catch (SQLException e) {
 				System.err.println("Exception(ignored): " + e.toString());
