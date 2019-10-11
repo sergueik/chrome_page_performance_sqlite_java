@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.sergueik.utils</groupId>
-  <artifactId>chromepageperformance</artifactId>
-  <version>0.3-SNAPSHOT</version>
+  <artifactId>chrome_page_performance</artifactId>
+  <version>0.4-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
   <properties>
@@ -18,13 +18,14 @@
     <gson.version>2.8.5</gson.version>
     <java.version>1.8</java.version>
     <jna-platform.version>4.5.2</jna-platform.version>
-    <json.version>20170516</json.version>
+    <json.version>20180813</json.version>
     <junit.version>4.12</junit.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>2.20</maven-surefire-plugin.version>
     <selenium.version>3.13.0</selenium.version>
+    <!-- latest is 3.141.59 -->
     <sqlite-jdbc.version>3.25.2</sqlite-jdbc.version>
     <!-- LATEST -->
   </properties>
