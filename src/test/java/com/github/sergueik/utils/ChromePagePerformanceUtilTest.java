@@ -50,7 +50,7 @@ public class ChromePagePerformanceUtilTest {
 	public static void beforeClass() throws IOException {
 		
 		System.setProperty("webdriver.chrome.driver",
-				osName.contains("windows")
+				osName.equals("windows")
 						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
 						: System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
