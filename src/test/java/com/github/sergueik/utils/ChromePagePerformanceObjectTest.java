@@ -51,9 +51,12 @@ public class ChromePagePerformanceObjectTest {
 	private static Connection conn;
 	private static String browser = "chrome";
 	private static final String osName = CommonUtils.getOSName();
+
 	private static final boolean headless = Boolean.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "false"));
 	private static final boolean useLocalDb = Boolean.parseBoolean(CommonUtils.getPropertyEnv("LOCAL", "false"));
 	private static final boolean debug = Boolean.parseBoolean(System.getenv("DEBUG"));
+	private static final boolean explainQueryPlan = Boolean
+			.parseBoolean(CommonUtils.getPropertyEnv("EXPLAIN_QUERY_PLAN", "false"));
 
 	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
 	// uncomment the next statement to get exercise the other formatting
@@ -381,16 +384,18 @@ public class ChromePagePerformanceObjectTest {
 
 	public static void printData(String key) {
 		ResultSet result = null;
+		if (explainQueryPlan) {
+			try {
+				String sql1 = "EXPLAIN QUERY PLAN " + extractQuery;
+				System.err.println("Prepare statement: " + sql1);
+				PreparedStatement _statement = conn.prepareStatement(sql1);
+				_statement.setString(1, key);
+				result = _statement.executeQuery();
+				System.err.println("Result: " + result.getString("detail"));
 
-		try {
-			String sql1 = "EXPLAIN QUERY PLAN " + extractQuery;
-			System.err.println("Prepare statement: " + sql1);
-			PreparedStatement _statement = conn.prepareStatement(sql1);
-			_statement.setString(1, key);
-			result = _statement.executeQuery();
-			System.err.println("Result: " + result);
-		} catch (Exception e) {
-			System.err.println("Exception(ignored): " + e.toString());
+			} catch (Exception e) {
+				System.err.println("Exception(ignored): " + e.toString());
+			}
 		}
 		try {
 			System.err.println("Prepare statement: " + extractQuery);
