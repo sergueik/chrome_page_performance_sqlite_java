@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
@@ -34,6 +35,7 @@ import com.sun.jna.platform.win32.WinReg;
 
 /**
  * Common Utilities (unfinished refacoring)
+ * 
  * @author: Serguei Kouzmine (kouzmine_serguei@yahoo.com)
  */
 
@@ -64,6 +66,47 @@ public class CommonUtils {
 		return osName;
 	}
 
+	// https://stackoverflow.com/questions/31072543/reliable-way-to-get-windows-version-from-registry
+	// CurrentMajorVersionNumber present in registry starting with Windows 10
+	// NOTE: systeminfo.exe is too slow
+	// https://stackoverflow.com/questions/6109679/how-to-check-windows-edition-in-java
+	public static boolean window10Check() {
+		String regPath = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+		int majorVersionNumber = 0;
+		int minorVersionNumber = 0;
+		String currentVersion = null;
+		try {
+			majorVersionNumber = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, regPath,
+					"CurrentMajorVersionNumber");
+			System.err.println("Windows version: " + majorVersionNumber);
+		} catch (Exception e) {
+			System.err.println("Exception (ignored)" + e.getMessage());
+		}
+		try {
+			minorVersionNumber = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, regPath,
+					"CurrentMinorVersionNumber");
+			System.err.println("Windows minor version: " + minorVersionNumber);
+		} catch (Exception e) {
+			System.err.println("Exception (ignored)" + e.getMessage());
+		}
+		try {
+			currentVersion = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, regPath, "CurrentVersion");
+			System.err.println("Windows version (legacy): " + currentVersion);
+		} catch (Exception e) {
+			System.err.println("Exception (ignored)" + e.getMessage());
+		}
+
+		try {
+			currentBuildNumber = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, regPath,
+					"CurrentBuildNumber");
+			System.err.println("Windows build number: " + currentBuildNumber);
+		} catch (Exception e) {
+			System.err.println("Exception (ignored)" + e.getMessage());
+		}
+
+		return (majorVersionNumber >= 10);
+	}
+
 	// http://www.sqlitetutorial.net/sqlite-java/create-table/
 	public static void createNewTable() {
 		sql = "DROP TABLE IF EXISTS performance";
@@ -72,8 +115,7 @@ public class CommonUtils {
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
-		sql = "CREATE TABLE IF NOT EXISTS performance (\n"
-				+ "	id integer PRIMARY KEY,\n" + "	name text NOT NULL,\n"
+		sql = "CREATE TABLE IF NOT EXISTS performance (\n" + "	id integer PRIMARY KEY,\n" + "	name text NOT NULL,\n"
 				+ "	duration real\n" + ");";
 		try (java.sql.Statement statement = conn.createStatement()) {
 			statement.execute(sql);
@@ -102,51 +144,25 @@ public class CommonUtils {
 			statement.setString(1, name);
 			statement.setDouble(2, duration);
 			statement.executeUpdate();
+			System.err.println("Executed update query: " + statement.toString());
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
 
-	// https://stackoverflow.com/questions/31072543/reliable-way-to-get-windows-version-from-registry
-	// CurrentMajorVersionNumber present in registry starting with Windows 10
-	// NOTE: systeminfo.exe is too slow
-	// https://stackoverflow.com/questions/6109679/how-to-check-windows-edition-in-java
-	public static boolean window10Check() {
-		String regPath = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-		int majorVersionNumber = 0;
-		int minorVersionNumber = 0;
-		String currentVersion = null;
-		try {
-			majorVersionNumber = Advapi32Util.registryGetIntValue(
-					WinReg.HKEY_LOCAL_MACHINE, regPath, "CurrentMajorVersionNumber");
-			System.err.println("Windows version: " + majorVersionNumber); 
-		} catch (Exception e) {
-			System.err.println("Exception (ignored)" + e.getMessage());
+	public static String resolveEnvVars(String input) {
+		if (null == input) {
+			return null;
 		}
-		try {
-			minorVersionNumber = Advapi32Util.registryGetIntValue(
-					WinReg.HKEY_LOCAL_MACHINE, regPath, "CurrentMinorVersionNumber");
-			System.err.println("Windows minor version: " + minorVersionNumber); 
-		} catch (Exception e) {
-			System.err.println("Exception (ignored)" + e.getMessage());
+		Pattern p = Pattern.compile("\\$(?:\\{(?:env:)?(\\w+)\\}|(\\w+))");
+		Matcher m = p.matcher(input);
+		StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
+			String envVarValue = System.getenv(envVarName);
+			m.appendReplacement(sb, null == envVarValue ? "" : envVarValue.replace("\\", "\\\\"));
 		}
-		try {
-			currentVersion = Advapi32Util.registryGetStringValue(
-					WinReg.HKEY_LOCAL_MACHINE, regPath, "CurrentVersion");
-			System.err.println("Windows version (legacy): " + currentVersion ); 
-		} catch (Exception e) {
-			System.err.println("Exception (ignored)" + e.getMessage());
-		}
-		
-		try {
-			currentBuildNumber = Advapi32Util.registryGetStringValue(
-					WinReg.HKEY_LOCAL_MACHINE, regPath, "CurrentBuildNumber");
-			System.err.println("Windows build number: " + currentBuildNumber ); 
-		} catch (Exception e) {
-			System.err.println("Exception (ignored)" + e.getMessage());
-		}
-		
-		return (majorVersionNumber >= 10);
+		m.appendTail(sb);
+		return sb.toString();
 	}
-
 }

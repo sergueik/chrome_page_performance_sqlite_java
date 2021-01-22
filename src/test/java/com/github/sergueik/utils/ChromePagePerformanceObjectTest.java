@@ -50,38 +50,47 @@ public class ChromePagePerformanceObjectTest {
 	private static WebDriver driver;
 	private static Connection conn;
 	private static String browser = "chrome";
-	private static String osName = CommonUtils.getOSName();
-	private static final boolean debug = Boolean
-			.parseBoolean(System.getenv("DEBUG"));
-	private static boolean headless = Boolean
-			.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "false"));
+	private static final String osName = CommonUtils.getOSName();
+
+	private static final boolean headless = Boolean.parseBoolean(CommonUtils.getPropertyEnv("HEADLESS", "false"));
+	private static final boolean useLocalDb = Boolean.parseBoolean(CommonUtils.getPropertyEnv("LOCAL", "false"));
+	private static final boolean debug = Boolean.parseBoolean(System.getenv("DEBUG"));
+	private static final boolean explainQueryPlan = Boolean
+			.parseBoolean(CommonUtils.getPropertyEnv("EXPLAIN_QUERY_PLAN", "false"));
+
+	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
+	// uncomment the next statement to get exercise the other formatting
+	// private final static String extractQuery = "SELECT name, duration FROM
+	// performance where name = '?'";
+	private static final String extractQueryTemplate = "SELECT name, duration FROM performance where name = '%s' order by name";
 
 	// private static String baseURL = "https://www.royalcaribbean.com/";
 	// private static By elementSelector = By.id("find-a-cruise");
 
 	private static String baseURL = "https://www.expedia.com/";
-	private static By elementSelector = By
-			.cssSelector("button#tab-flight-tab-hp");
-	/* private static String baseURL = "https://www.priceline.com/";
-	private static By elementSelector = By.cssSelector(
-			"#global-header-nav-section > ul > li.global-header-nav-product-item.global-header-nav-product-item-hotels > a");
-	*/
+	private static By elementSelector = By.cssSelector("button#tab-flight-tab-hp");
+	/*
+	 * private static String baseURL = "https://www.priceline.com/"; private
+	 * static By elementSelector = By.cssSelector(
+	 * "#global-header-nav-section > ul > li.global-header-nav-product-item.global-header-nav-product-item-hotels > a"
+	 * );
+	 */
 	private static String sql;
 	// NOTE: SQLite driver on its own will not create folders to construct
 	// path to the file,
 	// default is current project directory
 	// dbURL = "jdbc:sqlite:performance.db";
 	private static final String sqlite_database_name = "sqlite_database_name";
-	private static final String dbURL = resolveEnvVars(String.format(
-			"jdbc:sqlite:${USERPROFILE}\\Desktop\\%s.db", sqlite_database_name));
+	private static final String dbURL = CommonUtils
+			.resolveEnvVars(String.format("jdbc:sqlite:${USERPROFILE}\\Desktop\\%s.db", sqlite_database_name));
 
 	@SuppressWarnings("deprecation")
+
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 
 		System.setProperty("webdriver.chrome.driver",
-				osName.contains("windows")
-						? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
+				osName.contains("windows") ? new File("c:/java/selenium/chromedriver.exe").getAbsolutePath()
 						: System.getenv("HOME") + "/Downloads/chromedriver");
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
 		ChromeOptions options = new ChromeOptions();
@@ -89,21 +98,19 @@ public class ChromePagePerformanceObjectTest {
 		Map<String, Object> chromePrefs = new HashMap<>();
 
 		chromePrefs.put("profile.default_content_settings.popups", 0);
-		String downloadFilepath = System.getProperty("user.dir")
-				+ System.getProperty("file.separator") + "target"
+		String downloadFilepath = System.getProperty("user.dir") + System.getProperty("file.separator") + "target"
 				+ System.getProperty("file.separator");
 		chromePrefs.put("download.default_directory", downloadFilepath);
 		chromePrefs.put("enableNetwork", "true");
 		options.setExperimentalOption("prefs", chromePrefs);
 
-		for (String option : (new String[] { "allow-running-insecure-content",
-				"allow-insecure-localhost", "enable-local-file-accesses",
-				"disable-notifications",
+		for (String option : (new String[] { "allow-running-insecure-content", "allow-insecure-localhost",
+				"enable-local-file-accesses", "disable-notifications",
 				/* "start-maximized" , */
 				"browser.download.folderList=2",
 				"--browser.helperApps.neverAsk.saveToDisk=image/jpg,text/csv,text/xml,application/xml,application/vnd.ms-excel,application/x-excel,application/x-msexcel,application/excel,application/pdf",
 				String.format("browser.download.dir=%s", downloadFilepath)
-				/* "user-data-dir=/path/to/your/custom/profile"  , */
+				/* "user-data-dir=/path/to/your/custom/profile" , */
 		})) {
 			options.addArguments(option);
 		}
@@ -111,10 +118,10 @@ public class ChromePagePerformanceObjectTest {
 		if (headless) {
 			// headless option arguments
 			for (String option : (osName.toLowerCase().startsWith("windows"))
-					? new String[] { "headless", "disable-gpu", "disable-plugins",
-							"window-size=1200x600", "window-position=-9999,0" }
-					: new String[] { "headless", "disable-gpu",
-							"remote-debugging-port=9222", "window-size=1200x600" }) {
+					? new String[] { "headless", "disable-gpu", "disable-plugins", "window-size=1200x600",
+							"window-position=-9999,0" }
+					: new String[] { "headless", "disable-gpu", "remote-debugging-port=9222",
+							"window-size=1200x600" }) {
 				options.addArguments(option);
 			}
 			// on Windows need ChromeDriver 2.31 / Chrome 60 to support headless
@@ -132,18 +139,28 @@ public class ChromePagePerformanceObjectTest {
 			// origin:
 			// https://www.tutorialspoint.com/sqlite/sqlite_java.htm
 			Class.forName("org.sqlite.JDBC");
+
+			// NOTE: SQLite driver on its own will not create folders to
+			// construct
+			// path to the file,
+			// default is current project directory
+
+			String dbURL = (useLocalDb) ? "jdbc:sqlite:performance.db"
+					: CommonUtils.resolveEnvVars(String.format("jdbc:sqlite:${%s}/Desktop/sqlite_database_name.db",
+							osName.equals("windows") ? "USERPROFILE" : "HOME"));
+
 			conn = DriverManager.getConnection(dbURL);
 			if (conn != null) {
 				System.err.println("Connected to the database " + dbURL);
 				DatabaseMetaData databaseMetadata = conn.getMetaData();
-				System.err.println("Driver name: " + databaseMetadata.getDriverName());
-				System.err
-						.println("Driver version: " + databaseMetadata.getDriverVersion());
-				System.err.println(
-						"Product name: " + databaseMetadata.getDatabaseProductName());
-				System.err.println(
-						"Product version: " + databaseMetadata.getDatabaseProductVersion());
+				System.out.println("Database url: " + dbURL);
+				System.out.println("Driver name: " + databaseMetadata.getDriverName());
+				System.out.println("Driver version: " + databaseMetadata.getDriverVersion());
+				System.out.println("Product name: " + databaseMetadata.getDatabaseProductName());
+				System.out.println("Product version: " + databaseMetadata.getDatabaseProductVersion());
+
 				createNewTable();
+				createNewIndex();
 				// insertData("name", 1.0);
 				// conn.close();
 			}
@@ -166,18 +183,17 @@ public class ChromePagePerformanceObjectTest {
 		wait.until(urlChange);
 		System.err.println("Current  URL: " + driver.getCurrentUrl());
 		/*
-		// Take screenshot
-		// under headless Chrome, some vendor pages behave differently e.g.
-		// www.royalcaribbean.com redirects to the
-		// "Oops... Looks like RoyalCaribbean.com is on vacation" page
-		File screenShot = ((TakesScreenshot) driver)
-				.getScreenshotAs(OutputType.FILE);
-		
-		// To get the width of image.
-		BufferedImage readImage = ImageIO.read(screenShot);
-		int width = readImage.getWidth();
-		FileUtils.copyFile(screenShot, new File(System.getProperty("user.dir")
-				+ System.getProperty("file.separator") + "test.png"));
+		 * // Take screenshot // under headless Chrome, some vendor pages behave
+		 * differently e.g. // www.royalcaribbean.com redirects to the //
+		 * "Oops... Looks like RoyalCaribbean.com is on vacation" page File
+		 * screenShot = ((TakesScreenshot) driver)
+		 * .getScreenshotAs(OutputType.FILE);
+		 * 
+		 * // To get the width of image. BufferedImage readImage =
+		 * ImageIO.read(screenShot); int width = readImage.getWidth();
+		 * FileUtils.copyFile(screenShot, new
+		 * File(System.getProperty("user.dir") +
+		 * System.getProperty("file.separator") + "test.png"));
 		 */
 	}
 
@@ -199,15 +215,15 @@ public class ChromePagePerformanceObjectTest {
 		}
 	}
 
-	@Ignore
+	// @Ignore
+	// NOTE: only works with HEADLESS = false
 	@Test
 	public void testSetTimer() {
 		if (headless) {
 			System.err.println("This test only works with HEADLESS = false");
 			return;
 		}
-		double test = new ChromePagePerformanceObject(driver, baseURL,
-				elementSelector).getLoadTime();
+		double test = new ChromePagePerformanceObject(driver, baseURL, elementSelector).getLoadTime();
 		System.err.println(test);
 
 	}
@@ -220,8 +236,7 @@ public class ChromePagePerformanceObjectTest {
 		Pattern pattern = Pattern.compile(splitter);
 		Matcher matcher = pattern.matcher(payload);
 		if (matcher.find()) {
-			new ArrayList<String>(Arrays.asList(payload.split(splitter))).stream()
-					.forEach(System.err::println);
+			new ArrayList<String>(Arrays.asList(payload.split(splitter))).stream().forEach(System.err::println);
 		}
 	}
 
@@ -239,7 +254,8 @@ public class ChromePagePerformanceObjectTest {
 			System.err.println("First object: " + objectList.get(0));
 		} catch (ClassCastException e) {
 			System.err.println("Exception (ignored) " + e.toString());
-			// Exception (ignored) java.lang.ClassCastException: java.lang.String
+			// Exception (ignored) java.lang.ClassCastException:
+			// java.lang.String
 			// cannot be cast to java.util.List
 		} catch (Exception e) {
 			System.err.println("Exception (rethrown) " + e.toString());
@@ -251,8 +267,8 @@ public class ChromePagePerformanceObjectTest {
 			Pattern pattern = Pattern.compile(splitter);
 			Matcher matcher = pattern.matcher(payload);
 			if (matcher.find()) {
-				new ArrayList<String>(Arrays.asList(payload.split(splitter))).stream()
-						.forEach(System.err::println);
+				new ArrayList<String>(Arrays.asList(payload.split(splitter))).stream().forEach(System.err::println);
+
 			}
 		}
 	}
@@ -260,13 +276,11 @@ public class ChromePagePerformanceObjectTest {
 	@Ignore
 	@Test
 	public void testChromePagePerformanceObjectParse() {
-		ChromePagePerformanceObject chromePagePerformanceObject = new ChromePagePerformanceObject(
-				driver, null);
+		ChromePagePerformanceObject chromePagePerformanceObject = new ChromePagePerformanceObject(driver, null);
 		String payload = "[{redirectCount=0, encodedBodySize=64518, unloadEventEnd=0, responseEnd=4247.699999992619, domainLookupEnd=2852.7999999932945, unloadEventStart=0, domContentLoadedEventStart=4630.699999994249, type=navigate, decodedBodySize=215670, duration=5709.000000002561, redirectStart=0, connectEnd=3203.5000000032596, toJSON={}, requestStart=3205.499999996391, initiatorType=beacon}]";
 		// get rid of array.
 		payload = payload.substring(1, payload.length() - 1);
-		Map<String, Double> data = chromePagePerformanceObject
-				.CreateDateMap(payload);
+		Map<String, Double> data = chromePagePerformanceObject.CreateDateMap(payload);
 		data.entrySet().stream().forEach(System.err::println);
 	}
 
@@ -274,13 +288,11 @@ public class ChromePagePerformanceObjectTest {
 	@Test
 	public void testEdgePagePerformanceCollection() {
 		if (CommonUtils.isWindow10()) {
-			ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
-					.getInstance();
+			ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil.getInstance();
 			ChromePagePerformanceUtil.setBrowser("edge");
 			double loadTime = chromePagePerformanceUtil.getLoadTime(baseURL);
-			System.err.println("Page Load Time: " + loadTime);
-			Map<String, Double> pageElementTimers = chromePagePerformanceUtil
-					.getPageElementTimers();
+			System.out.println("Page Load Time: " + loadTime);
+			Map<String, Double> pageElementTimers = chromePagePerformanceUtil.getPageElementTimers();
 			if (pageElementTimers != null) {
 				Set<String> names = pageElementTimers.keySet();
 				for (String name : names) {
@@ -292,20 +304,18 @@ public class ChromePagePerformanceObjectTest {
 	}
 
 	// @Ignore
+	// NOTE: only works with HEADLESS = false
 	@Test
 	public void testUtil() {
 		if (headless) {
 			System.err.println("This test only works with HEADLESS = false");
 			return;
 		}
-		ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil
-				.getInstance();
+		ChromePagePerformanceUtil chromePagePerformanceUtil = ChromePagePerformanceUtil.getInstance();
 		ChromePagePerformanceUtil.setBrowser(browser);
-		double loadTime = chromePagePerformanceUtil.getLoadTime(driver, baseURL,
-				elementSelector);
+		double loadTime = chromePagePerformanceUtil.getLoadTime(driver, baseURL, elementSelector);
 		System.out.println("Page Load Time: " + loadTime);
-		Map<String, Double> pageElementTimers = chromePagePerformanceUtil
-				.getPageElementTimers();
+		Map<String, Double> pageElementTimers = chromePagePerformanceUtil.getPageElementTimers();
 		if (conn != null) {
 			Set<String> names = pageElementTimers.keySet();
 			for (String name : names) {
@@ -318,19 +328,31 @@ public class ChromePagePerformanceObjectTest {
 		}
 	}
 
+	// https://www.sqlitetutorial.net/sqlite-index/
+	public static void createNewIndex() {
+		sql = "CREATE /* UNIQUE */ INDEX idx_name ON performance(name);";
+		try (java.sql.Statement statement = conn.createStatement()) {
+			statement.execute(sql);
+			System.err.println("Executed: " + sql);
+		} catch (SQLException e) {
+			System.err.println(e.getMessage());
+		}
+	}
+
 	// http://www.sqlitetutorial.net/sqlite-java/create-table/
 	public static void createNewTable() {
 		sql = "DROP TABLE IF EXISTS performance";
 		try (java.sql.Statement statement = conn.createStatement()) {
 			statement.execute(sql);
+			System.err.println("Executed: " + sql);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
-		sql = "CREATE TABLE IF NOT EXISTS performance (\n"
-				+ "	id integer PRIMARY KEY,\n" + "	name text NOT NULL,\n"
+		sql = "CREATE TABLE IF NOT EXISTS performance (\n" + "	id integer PRIMARY KEY,\n" + "	name text NOT NULL,\n"
 				+ "	duration real\n" + ");";
 		try (java.sql.Statement statement = conn.createStatement()) {
 			statement.execute(sql);
+			System.err.println("Executed: " + sql);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -360,31 +382,21 @@ public class ChromePagePerformanceObjectTest {
 		return value;
 	}
 
-	public static String resolveEnvVars(String input) {
-		if (null == input) {
-			return null;
-		}
-		Pattern p = Pattern.compile("\\$(?:\\{(?:env:)?(\\w+)\\}|(\\w+))");
-		Matcher m = p.matcher(input);
-		StringBuffer sb = new StringBuffer();
-		while (m.find()) {
-			String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
-			String envVarValue = System.getenv(envVarName);
-			m.appendReplacement(sb,
-					null == envVarValue ? "" : envVarValue.replace("\\", "\\\\"));
-		}
-		m.appendTail(sb);
-		return sb.toString();
-	}
-
-	private final static String extractQuery = "SELECT name, duration FROM performance where name = ?";
-	// uncomment the next statement to get exercise the other formatting
-	// private final static String extractQuery = "SELECT name, duration FROM
-	// performance where name = '?'";
-	private static final String extractQueryTemplate = "SELECT name, duration FROM performance where name = '%s'";
-
 	public static void printData(String key) {
 		ResultSet result = null;
+		if (explainQueryPlan) {
+			try {
+				String sql1 = "EXPLAIN QUERY PLAN " + extractQuery;
+				System.err.println("Prepare statement: " + sql1);
+				PreparedStatement _statement = conn.prepareStatement(sql1);
+				_statement.setString(1, key);
+				result = _statement.executeQuery();
+				System.err.println("Result: " + result.getString("detail"));
+
+			} catch (Exception e) {
+				System.err.println("Exception(ignored): " + e.toString());
+			}
+		}
 		try {
 			System.err.println("Prepare statement: " + extractQuery);
 			PreparedStatement _statement = conn.prepareStatement(extractQuery);
@@ -401,8 +413,7 @@ public class ChromePagePerformanceObjectTest {
 			try {
 				System.err.println("Format statement query: " + extractQueryTemplate);
 				Statement _statement = conn.createStatement();
-				result = _statement
-						.executeQuery(String.format(extractQueryTemplate, key));
+				result = _statement.executeQuery(String.format(extractQueryTemplate, key));
 			} catch (Exception e2) {
 				e2.printStackTrace();
 			}
@@ -416,9 +427,9 @@ public class ChromePagePerformanceObjectTest {
 					String name = result.getString(1);
 					Double duration = result.getDouble(2);
 					System.err.println("name: " + name);
-					System.err.println(
-							"duration: " + (new DecimalFormat("####.##")).format(duration));
-					// System.err.println(String.format("duration: %.2f", duration));
+					System.err.println("duration: " + (new DecimalFormat("####.##")).format(duration));
+					// System.err.println(String.format("duration: %.2f",
+					// duration));
 				}
 			} catch (SQLException e) {
 				System.err.println("Exception(ignored): " + e.toString());

@@ -9,7 +9,7 @@ var performance = window.performance;
 var timings = performance.timing;
 return timings;
 ```
-Alternaively the more advanced `timing.js` script from [Addy Osmani's repository](https://github.com/addyosmani/timing.js/blob/master/timing.js
+Alternatively the more advanced `timing.js` script from [Addy Osmani's repository](https://github.com/addyosmani/timing.js/blob/master/timing.js
 ) is called, and the results are deserialized into a `Map<String, Double>` either implicitly by deserializing the string value produced by `JSON.stringify()` method with [one of many available](https://stleary.github.io/JSON-java/) __JSON__ parsing libraries or by extracting the object via home-brewed parser of the value returned by Javascript API, as shown below.
 
 ![data.db](https://github.com/sergueik/chrome_page_performance_sqlite_java/blob/master/screenshots/data.png)
@@ -357,6 +357,7 @@ It is not related to the main objective of this project.
 
 ### See Also
 
+ * [Chrome DevTools API](https://chromedevtools.github.io/devtools-protocol/tot/Performance/#method-getMetrics), also covered in [sergueik/selenium_cdp](https://github.com/sergueik/selenium_cdp/search?q=performance) and [cdp-webdriver](https://github.com/sergueik/cdp_webdriver/search?q=performance) 
  * https://github.com/sirensolutions/kibi/tree/master/native-bindings
  * https://www.elastic.co/blog/logstash-jdbc-input-plugin
  * https://www.elastic.co/guide/en/logstash/current/plugins-inputs-sqlite.html
@@ -366,7 +367,9 @@ It is not related to the main objective of this project.
  * https://github.com/addyosmani/timing.js/blob/master/timing.js
  * https://github.com/ChrisLMerrill/muse-webperformance-graphite
  * https://stackoverflow.com/questions/32219113/how-to-extract-network-tab-contents-of-chrome-developer-tools-via-json/37133568#37133568
-
+ * [visualization](https://github.com/kaaes/timing) another [visualization](https://github.com/sunnylost/navigation-timing) of __Navigation Timing object__ (in Javascript)
+ * [post timing info frm browser to server](https://github.com/NickMRamirez/timing)
+ * https://github.com/kristopher/timing-js/blob/master/timing.js
 #### Note
 
 The project was earlier develped inside a repository [sergueik/selenium_java](https://github.com/sergueik/selenium_java.git) - check the old past histories there.
