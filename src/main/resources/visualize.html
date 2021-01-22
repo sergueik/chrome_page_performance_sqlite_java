@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!-- origin: https://github.com/sunnylost/navigation-timing -->
+<!-- builds the chart from current page data -->
+<html>
+<head>
+  <title>Test Navigation timing</title>
+  <style type="text/css">
+    body {
+      margin: 0;
+    }
+
+    #navigation-timing-chart,
+    #navigation-timing-chart div,
+    #navigation-timing-chart ol,
+    #navigation-timing-chart li,
+    #navigation-timing-chart span {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    #navigation-timing-chart {
+      position: fixed;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 10px;
+      opacity: 0.8;
+    }
+
+    #navigation-timing-chart li {
+      padding-top: 5px;
+    }
+
+    #navigation-timing-chart .title {
+      display: inline-block;
+      color: #666;
+      font-size: 16px;
+      width: 10%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #navigation-timing-chart .bar {
+      position: relative;
+      display: inline-block;
+      height: 20px;
+      width: 89%;
+    }
+
+    #navigation-timing-chart .bar i {
+      position: absolute;
+      font-size: 16px;
+      color: #fff;
+      text-align: center;
+      font-style: normal;
+    }
+  </style>
+</head>
+<body>
+  <script src="display-timing.js"></script>
+</body>
+</html>

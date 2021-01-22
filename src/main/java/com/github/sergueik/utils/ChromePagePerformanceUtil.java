@@ -37,7 +37,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class ChromePagePerformanceUtil {
 
 	static String browser = "chrome";
-	
+
 	public static void setBrowser(String browser) {
 		ChromePagePerformanceUtil.browser = browser;
 	}
@@ -143,17 +143,18 @@ public class ChromePagePerformanceUtil {
 						: String.format("%s/%s", browserDriverPath,
 								browserDrivers.get(browser)));
 
-		System.err.println("browser: " + browser);						
+		System.err.println("browser: " + browser);
 		if (browser.contains("edge")) {
 			// http://www.automationtestinghub.com/selenium-3-launch-microsoft-edge-with-microsoftwebdriver/
-			// This version of MicrosoftWebDriver.exe is not compatible with the installed version of Windows 10.
-			// observed with Windows 10 build 15063 (10.0.15063.0), 
+			// This version of MicrosoftWebDriver.exe is not compatible with the
+			// installed version of Windows 10.
+			// observed with Windows 10 build 15063 (10.0.15063.0),
 			// MicrosoftWebDriver.exe build 17134 (10.0.17134.1)).
-			// 
+			//
 			try {
-			  driver = new EdgeDriver();
+				driver = new EdgeDriver();
 			} catch (Exception e) {
-			  System.err.println("Exception (ignord): " + e.toString());	
+				System.err.println("Exception (ignord): " + e.toString());
 			}
 		} else {
 			driver = new ChromeDriver();
@@ -241,9 +242,31 @@ public class ChromePagePerformanceUtil {
 		return eventData;
 	}
 
+	// for simple calculation
+	// compute the difference between
+	// Load Event End and Navigation Event Start as
+	// Page Load Time
+	// origin:
+	// https://github.com/janaavula/Selenium-Response-Time/blob/master/src/navtimer/Navigation.java
+
+	public static long timerOperation(WebDriver driver, String comment) {
+		JavascriptExecutor js = (JavascriptExecutor) driver;
+		long loadEventEnd = (Long) js
+				.executeScript("return window. performance.timing.loadEventEnd;");
+		long navigationStart = (Long) js
+				.executeScript("return window. performance.timing.navigationStart;");
+		// System.out.println("Navigation start is " + (navigationStart) + " milli
+		// seconds.");
+		// System.out.println("Load Event end is " + (loadEventEnd) + " milli
+		// seconds.");
+		long pageLoadTime = loadEventEnd - navigationStart;
+		if (debug)
+			System.err.println(comment + " Load Time is " + pageLoadTime + " ms");
+		return pageLoadTime;
+	}
+
 	private Map<String, Double> createDateMapFromJSON(String payload)
 			throws JSONException {
-
 		if (debug) {
 			System.err.println("payload: " + payload);
 		}
