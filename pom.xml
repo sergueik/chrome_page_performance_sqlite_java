@@ -26,7 +26,7 @@
     <maven-surefire-plugin.version>2.20</maven-surefire-plugin.version>
     <selenium.version>3.13.0</selenium.version>
     <!-- latest is 3.141.59 -->
-    <sqlite-jdbc.version>3.25.2</sqlite-jdbc.version>
+    <sqlite-jdbc.version>3.41.2.2</sqlite-jdbc.version>
     <!-- LATEST -->
   </properties>
   <dependencies>
